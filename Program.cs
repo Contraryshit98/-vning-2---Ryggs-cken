@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Övning_2___Ryggsäcken
@@ -11,122 +12,154 @@ namespace Övning_2___Ryggsäcken
         public static int iterationOfFunktion = 0;
         static void Main(string[] args)
         {
-            //läsa ett dokument
+            //Läsa ett dokument -- Jag hann dock inte bygga in detta,
+            //Inte heller hann jag skriva kommentarer till koden.
+            //Arbetet var tidsödande och det finns en hel del ändringar
+            //som inte var förutbestämda utan jag blev tvungen att införa 
+            //efter att ha felsökt programmet. Det är ett halv-hafsat arbete med 
+            //grova brott mot den allmännt accepterade praxis, 
+            //men på kupen blir koden som i slutänden spys ur mycket mer 
+            //funktionell än vad själva uppgiften frågade efter.
             string[][] myWritings = new string[5][];
             myWritings[0] = new string[2] { "", "" };
+
+            //Testvärden
             Random random = new Random();
             DateTime RandomDay()
             {
                 DateTime start = new DateTime(1995, 1, 1);
-                int range = (DateTime.Now - start).Days;
-                return start.AddDays(random.Next(range));
+                int rangeD = (DateTime.Now - start).Days;
+                int rangeM = (DateTime.Now - start).Minutes;
+                return start.AddDays(random.Next(rangeD)).AddMinutes(random.Next(rangeM));
             }
-            myWritings[1] = new string[2] { RandomDay().ToString("mm hh dd MM yy"), "Entry 1" };
-            myWritings[2] = new string[2] { RandomDay().ToString(), "Entry 2" };
-            myWritings[3] = new string[2] { RandomDay().ToString(), "Entry 3" };
-            myWritings[4] = new string[2] { RandomDay().ToString(), "Entry 4" };
+            myWritings[1] = new string[2] { RandomDay().ToString("yy MM dd hh:mm"), "Entry 1" };
+            myWritings[2] = new string[2] { RandomDay().ToString("yy MM dd hh:mm"), "Entry 2" };
+            myWritings[3] = new string[2] { RandomDay().ToString("yy MM dd hh:mm"), "Entry 3" };
+            myWritings[4] = new string[2] { RandomDay().ToString("yy MM dd hh:mm"), "Entry 4" };
+
             int interactionNumber = 0;
 
             while (true)
             {
-                int myChoice = MainMenu();
-
-                switch (myChoice)
+                int[] myChoices = MainMenu();
+                foreach (int choice in myChoices)
                 {
-                    case 1:
-                        OptionOne(ref myWritings, ref interactionNumber);
-                        break;
-                    case 2:
-                        OptionTwo(ref myWritings, ref interactionNumber);
-                        break;
-                    case 3:
-                        OptionThree(ref myWritings, ref interactionNumber);
-                        break;
-                    case 4:
-                        goto exit_loop;
+                    switch (choice)
+                    {
+                        case 1:
+                            OptionOne(ref myWritings, ref interactionNumber);
+                            break;
+                        case 2:
+                            OptionTwo(ref myWritings, ref interactionNumber);
+                            break;
+                        case 3:
+                            OptionThree(ref myWritings, ref interactionNumber);
+                            break;
+                        case 4:
+                            goto exit_loop;
 
-                    default:
-                        Console.WriteLine("OBS vi råkade inte hitta någon lämplig hanling relevant för din inmätning. Försök igen :)");
-                        break;
+                        default:
+                            Console.WriteLine("OBS vi råkade inte hitta någon lämplig hanling relevant" +
+                                " för din inmätning. Försök igen :)");
+                            break;
+                    }
                 }
-
+        
             }
-
 
         exit_loop:;
 
         }
-
-        static int MainMenu()
+        static int[] MainMenu()
         {
             Console.WriteLine("\tMenyn");
             Console.WriteLine("[1] Skriv något nytt");
             Console.WriteLine("[2] Ändra ett tidigare inlägg, eller rensa innehållet");
-            Console.WriteLine("[3] Skriv ut (och skapa fil)");
+            Console.WriteLine("[3] Skriv ut");
             Console.WriteLine("[4] Avsluta");
 
-            Console.Write("Vanligen välj ett alternativ: "); //eller fler
-            int myChoice = Convert.ToInt32(Console.ReadLine());
+            Console.Write("Vanligen välj ett alternativ, eller en oordnad sammansättning (1 till 4 eller 1,..,3): "); 
+            string[] myChoicesS = Console.ReadLine().Split(',');
+            int[] myChoicesI = new int[myChoicesS.Length];
+            for (int i = 0; i < myChoicesI.Length; i++)
+            {
+                if (Regex.IsMatch(myChoicesS[i], @"\d"))
+                    myChoicesI[i] = Convert.ToInt32(myChoicesS[i]);
+            }
+            bool notSorted = true;
+            while (notSorted)
+            {
+                notSorted = false;
+                for (int i = 0; i < myChoicesI.Length - 1; i++)
+                {
+                    if (myChoicesI[i] > myChoicesI[i + 1])
+                    {
+                        int temp = myChoicesI[i + 1];
+                        myChoicesI[i + 1] = myChoicesI[i];
+                        myChoicesI[i] = temp;
+                        notSorted = true;
+                    }
+                }
+            }
 
-            return myChoice;
+            return myChoicesI;
         }
         static void OptionOne(ref string[][] myWritings, ref int interactionNumber)
         {
             string nowString = DateTime.Now.ToString("yy MM dd hh:mm");
             if (interactionNumber == 0)
-                Console.WriteLine("Var inte blyg - säg vad du har på hjärtat (avsluta med %):");
+                Console.WriteLine("Var inte blyg - säg vad du har på hjärtat (avsluta med %, avbryta med %&):");
             else
-                Console.WriteLine("Skriv in något (avsluta med %):");
-            string writing = Console.ReadLine();
+                Console.WriteLine("Skriv in något (avsluta med %, avbryta med %&):");
 
-            while (true)
+            string[] writing = new string[] { };
+            if (InputHandler(ref writing))
+                return;
+            if (writing.Length > 0)
             {
-
-                if ("%".Any(writing.Contains))
+                bool found = false;
+                for (int j = 0; j < myWritings.Length; j++)
                 {
-                    char[] stringed = writing.ToCharArray();
-                    for (int counter = 0; counter < stringed.Length; counter++)
+                    if (myWritings[j][0] == nowString)
                     {
-                        if (stringed[counter] == '%')
+                        int actualLength = myWritings[j].Length - 1;
+                        for (int i = 1; i < writing.Length + 1; i++)
                         {
-                            StringBuilder restringed = new StringBuilder(writing);
-                            restringed.Remove(counter, 1);
-                            writing = restringed.ToString();
-                            break;
+                            Array.Resize(ref myWritings[j], myWritings[j].Length + 1);
+                            myWritings[j][actualLength + i] = writing[i - 1];
                         }
-
-
+                       
+                        
+                        found = true;
+                        break;
                     }
-                    break;
                 }
-                writing += ". " + Console.ReadLine();
-            }
-            bool found = false;
-            for (int j = 0; j < myWritings.Length; j++)
-            {
-
-                if (myWritings[j][0] == nowString)
+                if (found == false)
                 {
-                    Array.Resize(ref myWritings[j], myWritings[j].Length + 1);
-                    myWritings[j][myWritings[j].Length - 1] = writing;
-                    found = true;
-                    break;
+                    Array.Resize(ref myWritings, myWritings.Length + 1);
+                    myWritings[myWritings.Length - 1] = new string[] { nowString };
+                    int actualLength = myWritings[myWritings.Length - 1].Length - 1;
+                    for (int i = 1; i < writing.Length + 1; i++)
+                    {
+                        Array.Resize(ref myWritings[myWritings.Length - 1], myWritings[myWritings.Length - 1].Length + 1);
+                        myWritings[myWritings.Length - 1][actualLength + i] = writing[i - 1];
+                    }
+                }
+                if (myWritings[0][0] == "" && myWritings[0][1] == "" && myWritings[0].Length == 2)
+                {
+                    var firstIndexRemover = new List<string[]>(myWritings);
+                    firstIndexRemover.RemoveAt(0);
+                    myWritings = firstIndexRemover.ToArray();
                 }
 
+                interactionNumber++;
             }
-            if (found == false)
+            else
             {
-                Array.Resize(ref myWritings, myWritings.Length + 1);
-                myWritings[myWritings.Length - 1] = new string[2] { nowString, writing };
+                Console.WriteLine("Ooops vi råkade inte hinna emotta detta. Försök igen :)");
+                OptionOne(ref myWritings, ref interactionNumber);
             }
-            if (myWritings[0][0] == "" && myWritings[0][1] == "" && myWritings[0].Length == 2)
-            {
-                var firstIndexRemover = new List<string[]>(myWritings);
-                firstIndexRemover.RemoveAt(0);
-                myWritings = firstIndexRemover.ToArray();
-            }
-
-            interactionNumber++;
+            
         }
         static void OptionTwo(ref string[][] myWritings, ref int interactionNumber)
         {
@@ -211,7 +244,7 @@ namespace Övning_2___Ryggsäcken
                 }
 
             }
-
+            
             Console.WriteLine("Här är de tillägg som adderades inom angivna tidpunkten:");
             Console.WriteLine(toChange[0].Remove(8) + ": ");
             for (int i = 1; i < toChange.Length; i++)
@@ -224,17 +257,36 @@ namespace Övning_2___Ryggsäcken
                 Console.Write("Ange siffran på det inlägg du önskar att ändra (1 till {0}): ", myWritings[myWritings.Length - 1].Length - 1);
                 queryNumber = Convert.ToInt32(Console.ReadLine());
             }
-            Console.WriteLine("Skriv in det nya innehållet (avsluta med %), eller Avbryta med %&:");
+            Console.WriteLine("Skriv in det nya innehållet (avsluta med %), Avbryta med %& eller Rensa innehållet %&#:");
             string writing = Console.ReadLine();
+            bool remove = false;
             while (true)
             {
                 if ("%".Any(writing.Contains))
                 {
+                    if (writing.Contains("%&#"))
+                    {
+                        iterationOfFunktion = 0;
+                        if (loopCount == 0)
+                        {
+                            var removed = new List<string>(myWritings[myWritings.Length - 1]);
+                            removed.RemoveAt(queryNumber);
+                            myWritings[myWritings.Length - 1] = removed.ToArray();
+                        }
+                        else
+                        {
+                            var removed = new List<string>(myWritings[loopCount - 1]);
+                            removed.RemoveAt(queryNumber);
+                            myWritings[loopCount - 1] = removed.ToArray();
+                        }    
+                        remove = true;
+                        break;
+                    }
                     if (writing.Contains("%&"))
                     {
                         iterationOfFunktion = 0;
                         return;
-                    }
+                    } 
                     char[] stringed = writing.ToCharArray();
                     for (int counter = 0; counter < stringed.Length; counter++)
                     {
@@ -252,45 +304,33 @@ namespace Övning_2___Ryggsäcken
 
                 writing += ". " + Console.ReadLine();
             }
-            toChange[queryNumber] = writing;
-            if (loopCount == 0)
-                myWritings[myWritings.Length - 1] = toChange;
-            else
-                myWritings[loopCount - 1] = toChange;
+            if (!remove)
+            {
+                toChange[queryNumber] = writing;
+                if (loopCount == 0)
+                    myWritings[myWritings.Length - 1] = toChange;
+                else
+                    myWritings[loopCount - 1] = toChange;
+            }
 
             iterationOfFunktion = 0;
         }
-        static void OptionThree(ref string[][] myWritings, ref int interactionNumber)
+        static void OptionThree (ref string[][] myWritings, ref int interactionNumber)
         {
             if (interactionNumber != 0)
             {
-                string[] something = new string[] { "", "" };
-                string[][] packaging = myWritings;
-                Console.WriteLine("\nHär är allt du skrev:\n\n");
+                Console.WriteLine("\n\nHär är allt du skrev:\n");
                 for (int j = 0; j < myWritings.Length; j++)
                 {
                     Console.Write(myWritings[j][0] + ": ");
                     for (int i = 1; i < myWritings[j].Length; i++)
                     {
                         Console.Write(myWritings[j][i] + "; ");
-
-                        StringBuilder stringed = new StringBuilder(myWritings[j][i]);
-                        if (myWritings[j][i][myWritings[j][i].Length - 1] == ' ')
-                        {
-                            stringed.Remove(myWritings[j][i].Length - 1, 1);
-                            stringed.Append(".");
-                        }
-                        else
-                            stringed.Append('.', 1);
-                        packaging[j][i] = stringed.ToString();
-
                         if (i == myWritings[j].Length - 1)
-                        {
                             Console.Write("\n");
-                        }
-
                     }
-
+                    if (j == myWritings.Length - 1)
+                        Console.Write("\n");
                 }
             }
             else
@@ -309,6 +349,50 @@ namespace Övning_2___Ryggsäcken
 
             }
         }
-
+        static bool InputHandler(ref string[] writing)
+        {
+            string[] compound = new string[1];
+            int count = 0;
+            while (true)
+            {
+                string temporary = Console.ReadLine();
+                if ("%".Any(temporary.Contains))
+                {
+                    if (temporary.Contains("%&"))
+                        return true;
+                    char[] stringed = temporary.ToCharArray();
+                    StringBuilder restringed = new StringBuilder(temporary);
+                    for (int counter = 0; counter < stringed.Length; counter++)
+                    {
+                        if (stringed[counter] == '%')
+                            restringed.Remove(counter, 1);
+                    }
+                    temporary = restringed.ToString();
+                    if (temporary[temporary.Length - 1] == ' ')
+                    {
+                        temporary = Regex.Replace(temporary, @"[ \t]+$", ".");
+                        compound[count] = temporary;
+                    }
+                    else if (temporary[temporary.Length - 1] != '.')
+                        compound[count] = temporary + ".";
+                    else
+                        compound[count] = temporary;
+                    break;
+                }
+                if (temporary[temporary.Length - 1] == ' ')
+                {
+                    temporary = Regex.Replace(temporary, @"[ \t]+$", ".");
+                    compound[count] = temporary;
+                }
+                else if (temporary[temporary.Length - 1] != '.')
+                    compound[count] = temporary + ".";
+                else
+                    compound[count] = temporary;
+                count++;
+                Array.Resize(ref compound, compound.Length + 1);
+            }
+            writing = compound;
+            return false;
+        }
     }
 }
